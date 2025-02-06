@@ -1,0 +1,16 @@
+{
+    "name": "whatsapp-chatgpt-bot",
+    "version": "1.0.0",
+    "description": "Your Node.js app description",
+      "main": "index.js",
+    "scripts":
+     {
+      "start": "node index.js"
+    },
+    "dependencies"    :
+     {
+    },
+    "devDependencies": {
+      "devDependencyExample": "1.0.0"
+    }
+}
