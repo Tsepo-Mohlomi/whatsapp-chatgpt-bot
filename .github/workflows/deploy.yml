@@ -1,3 +1,5 @@
+name: Deploy Bot
+
 on:
   push:
     branches:
