@@ -1,0 +1,20 @@
+{
+  "name": "whatsapp-chatgpt-bot",
+  "version": "1.1.0",
+  "description": "A private WhatsApp bot powered by OpenAI.",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "check": "node --check bot.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc.14",
+    "dotenv": "^17.4.2",
+    "openai": "^7.10.0",
+    "pino": "^9.7.0"
+  }
+}
