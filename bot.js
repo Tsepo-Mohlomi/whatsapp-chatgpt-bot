@@ -48,8 +48,8 @@ function isStatusOrProtocolMessage(msg) {
 
 function validateConfig(env = process.env) {
   const missing = [];
-  if (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === "your_openai_api_key") missing.push("OPENAI_API_KEY");
-  if (!env.OWNER_NUMBER) missing.push("OWNER_NUMBER");
+  if (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === "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") missing.push("OPENAI_API_KEY");
+  if (!env.OWNER_NUMBER) missing.push("27645063984");
   if (missing.length) {
     throw new Error(`Missing required environment variable(s): ${missing.join(", ")}`);
   }
