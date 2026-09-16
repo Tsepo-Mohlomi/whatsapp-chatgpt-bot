@@ -1,7 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const http = require("node:http");
 const {
   createReplyQueue,
+  createHealthServer,
   getMessageText,
   normalizeJid,
   validateConfig,
@@ -31,4 +33,20 @@ test("queues replies per chat in order", async () => {
     enqueue("chat", async () => { events.push("second"); }),
   ]);
   assert.deepEqual(events, ["first", "first-done", "second"]);
+});
+
+test("serves a JSON health endpoint", async () => {
+  const server = createHealthServer(() => ({ status: "ok", whatsapp: "starting" }));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const response = await new Promise((resolve, reject) => {
+    http.get(`http://127.0.0.1:${port}/health`, (res) => {
+      let body = "";
+      res.on("data", (chunk) => { body += chunk; });
+      res.on("end", () => resolve({ statusCode: res.statusCode, body }));
+    }).on("error", reject);
+  });
+  server.close();
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), { status: "ok", whatsapp: "starting" });
 });

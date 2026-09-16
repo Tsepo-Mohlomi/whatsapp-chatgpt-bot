@@ -3,3 +3,5 @@ auth/
 .env
 npm-debug.log*
 .DS_Store
+.env.*.local
+*.log

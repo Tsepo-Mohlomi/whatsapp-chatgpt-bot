@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: whatsapp-chatgpt-bot
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: whatsapp-auth
+      mountPath: /var/lib/whatsapp
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.0.0
+      - key: AUTH_DIR
+        value: /var/lib/whatsapp/auth
+      - key: PORT
+        value: 10000
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: LOG_LEVEL
+        value: info
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OWNER_NUMBER
+        sync: false
+      - key: SYSTEM_PROMPT
+        sync: false

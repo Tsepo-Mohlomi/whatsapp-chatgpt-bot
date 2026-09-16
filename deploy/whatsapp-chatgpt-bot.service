@@ -1,0 +1,17 @@
+[Unit]
+Description=WhatsApp ChatGPT Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/whatsapp-chatgpt-bot
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/whatsapp-chatgpt-bot/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

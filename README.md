@@ -4,20 +4,57 @@ A private WhatsApp bot that replies to the configured owner using OpenAI. It use
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 18 or newer (Node.js 22 is recommended)
 - An OpenAI API key
 - A WhatsApp account used for the bot
 
-## Setup
+## Quick start on Linux
 
 ```bash
-npm install
+sudo apt update && sudo apt install -y nodejs npm
+npm ci
 cp .env.example .env
 # Edit .env and set OPENAI_API_KEY and OWNER_NUMBER
 npm start
 ```
 
 On first launch, scan the QR code shown in the terminal from WhatsApp on your phone under **Linked devices**. Credentials are stored in `auth/` and reused on later launches.
+
+For a long-running native Linux service, copy [`deploy/whatsapp-chatgpt-bot.service`](deploy/whatsapp-chatgpt-bot.service) to `/etc/systemd/system/`, edit its `WorkingDirectory` and `User`, then run `sudo systemctl enable --now whatsapp-chatgpt-bot`.
+
+## Deploy with Render
+
+This repository includes [`render.yaml`](render.yaml), so Render can create the service from **New > Blueprint** after connecting the GitHub repository. The Blueprint uses `npm ci`, `npm start`, `/health`, and a 1 GB persistent disk mounted at `/var/lib/whatsapp` so the WhatsApp login survives restarts.
+
+Set `OPENAI_API_KEY` and `OWNER_NUMBER` when Render prompts for them. The service binds to Render's `PORT` and listens on `0.0.0.0`. A persistent disk is required for a reliable Render deployment; choose a Render plan that supports persistent disks.
+
+After the first deploy, open the service logs and scan the printed QR code. Keep the service running while linking the account. Do not expose the auth directory or QR code publicly.
+
+## Use GitHub Codespaces
+
+Open the repository in a Codespace. The included [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json) installs Node.js 22, runs `npm ci`, and forwards port 3000 for the health endpoint.
+
+Add `OPENAI_API_KEY` and `OWNER_NUMBER` as **Codespaces secrets** or create a local `.env` inside the Codespace:
+
+```bash
+cp .env.example .env
+npm start
+```
+
+Scan the QR code in the Codespaces terminal. Codespaces storage persists for that Codespace, but it is not a production always-on host; use Render or a Linux server for continuous operation.
+
+## Docker on Linux
+
+Docker keeps WhatsApp credentials in a named volume:
+
+```bash
+cp .env.example .env
+# Edit .env
+sudo docker compose up -d --build
+sudo docker compose logs -f whatsapp-bot
+```
+
+Scan the QR code from the logs. Check the health endpoint with `curl http://localhost:3000/health`. Stop it with `sudo docker compose down`; the named volume remains until explicitly removed.
 
 ## Behavior
 
@@ -26,7 +63,8 @@ On first launch, scan the QR code shown in the terminal from WhatsApp on your ph
 - `!ping` returns `pong`; `!help` shows the available commands.
 - Messages from the same chat are processed in order to prevent overlapping replies.
 - The bot reconnects after an unexpected WhatsApp disconnect, but does not loop after logout.
-- The OpenAI model and system prompt can be changed through `.env`.
+- `/health` returns a JSON liveness response for Render, Docker, and monitoring tools.
+- The OpenAI model, system prompt, auth directory, port, and log level can be changed through `.env`.
 
 ## Security
 
@@ -38,5 +76,3 @@ Never commit `.env` or `auth/`. The repository ignores both. If an API key was p
 npm run check
 npm test
 ```
-
-To run the bot continuously in production, use a process manager such as systemd, PM2, or Docker on a machine that remains online. Do not expose the QR code or the `auth/` directory publicly.

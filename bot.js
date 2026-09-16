@@ -5,9 +5,13 @@ const {
 } = require("@whiskeysockets/baileys");
 const OpenAI = require("openai");
 const P = require("pino");
+const http = require("node:http");
 require("dotenv").config();
 
 const AUTH_DIR = process.env.AUTH_DIR || "auth";
+const PORT = Number(process.env.PORT || 3000);
+let healthServer;
+let whatsappConnected = false;
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT ||
   "You are a helpful WhatsApp assistant. Keep replies clear, friendly, and reasonably concise.";
@@ -67,12 +71,32 @@ function createReplyQueue() {
   };
 }
 
+function createHealthServer(getStatus = () => ({ status: "ok" })) {
+  return http.createServer((req, res) => {
+    if (req.url === "/health" || req.url === "/") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify(getStatus()));
+      return;
+    }
+    res.writeHead(404, { "content-type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "not_found" }));
+  });
+}
+
 async function startBot() {
   validateConfig();
   const openai = createOpenAI();
   const ownerJid = normalizeJid(process.env.OWNER_NUMBER);
   const enqueueReply = createReplyQueue();
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+
+  if (!healthServer) healthServer = createHealthServer(() => ({
+    status: "ok",
+    whatsapp: whatsappConnected ? "connected" : "starting",
+  }));
+  if (!healthServer.listening) healthServer.listen(PORT, "0.0.0.0", () => {
+    console.log(`Health server listening on 0.0.0.0:${PORT}`);
+  });
 
   const sock = makeWASocket({
     auth: state,
@@ -84,8 +108,12 @@ async function startBot() {
   sock.ev.on("creds.update", saveCreds);
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
     if (qr) console.log("Scan the QR code above with WhatsApp to link this bot.");
-    if (connection === "open") console.log("WhatsApp bot connected.");
+    if (connection === "open") {
+      whatsappConnected = true;
+      console.log("WhatsApp bot connected.");
+    }
     if (connection === "close") {
+      whatsappConnected = false;
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
       console.error(`WhatsApp connection closed${shouldReconnect ? "; reconnecting" : "; logged out"}.`);
@@ -151,6 +179,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  createHealthServer,
   createOpenAI,
   createReplyQueue,
   getMessageText,
