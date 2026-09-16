@@ -22,6 +22,26 @@ On first launch, scan the QR code shown in the terminal from WhatsApp on your ph
 
 For a long-running native Linux service, copy [`deploy/whatsapp-chatgpt-bot.service`](deploy/whatsapp-chatgpt-bot.service) to `/etc/systemd/system/`, edit its `WorkingDirectory` and `User`, then run `sudo systemctl enable --now whatsapp-chatgpt-bot`.
 
+## Run on Android with Termux
+
+Install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or the official Termux release source, then clone this repository inside Termux:
+
+```bash
+pkg update -y
+pkg install -y git
+git clone https://github.com/Tsepo-Mohlomi/whatsapp-chatgpt-bot.git
+cd whatsapp-chatgpt-bot
+bash deploy/termux-install.sh
+nano .env
+./deploy/termux-run.sh
+```
+
+Set `OPENAI_API_KEY` and `OWNER_NUMBER` in `.env`, then scan the QR code printed in the Termux terminal. WhatsApp credentials remain in Termux's private app storage under `auth/`, so they survive ordinary app restarts. The installer also requests shared-storage permission when available, although the bot does not need shared storage.
+
+For longer sessions, keep Termux open in a persistent terminal such as `tmux`, disable Android battery optimization for Termux, and use `termux-wake-lock` before starting the bot. To start it after a phone reboot, install the **Termux:Boot** add-on and create a boot script that changes to this directory and runs `./deploy/termux-run.sh`.
+
+Termux is convenient for personal use and testing, but Android can still stop background apps or network connections. It is therefore not a guaranteed 24/7 host; use Render, a Linux server, or Docker for unattended production operation. Do not expose the health endpoint publicly from your phone.
+
 ## Deploy with Render
 
 This repository includes [`render.yaml`](render.yaml), so Render can create the service from **New > Blueprint** after connecting the GitHub repository. The Blueprint uses `npm ci`, `npm start`, `/health`, and a 1 GB persistent disk mounted at `/var/lib/whatsapp` so the WhatsApp login survives restarts.
