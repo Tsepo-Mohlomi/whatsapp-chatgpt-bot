@@ -84,7 +84,25 @@ Scan the QR code from the logs. Check the health endpoint with `curl http://loca
 - Messages from the same chat are processed in order to prevent overlapping replies.
 - The bot reconnects after an unexpected WhatsApp disconnect, but does not loop after logout.
 - `/health` returns a JSON liveness response for Render, Docker, and monitoring tools.
-- The OpenAI model, system prompt, auth directory, port, and log level can be changed through `.env`.
+- The OpenAI model, system prompt, auth directory, port, log level, command prefix, and automatic status viewing can be changed through `.env`.
+
+## Commands
+
+Commands use `:` by default. Send `:menu` for the in-chat menu.
+
+| Command | Usage | Description |
+| --- | --- | --- |
+| `:menu` / `:help` | `:menu` | Show all commands. |
+| `:status` | `:status` | Show WhatsApp connection, uptime, model, and auto-view state. |
+| `:react` | Reply to a message, then send `:react ❤️` | React to the quoted message. |
+| `:autoread` | `:autoread on` or `:autoread off` | Enable or disable automatic WhatsApp status viewing during the current bot session. |
+| `:ai` / `:ask` | `:ai write a short greeting` | Ask ChatGPT explicitly. Plain messages still go to ChatGPT. |
+| `:ping` | `:ping` | Check whether the bot responds. |
+| `:time` | `:time` | Show the bot server time. |
+| `:id` | `:id` | Show the current chat ID. |
+| `:about` | `:about` | Show bot information. |
+
+Automatic status viewing is enabled by default and can be disabled permanently with `AUTO_VIEW_STATUS=false` in `.env`. The bot only processes commands from `OWNER_NUMBER`; group messages remain ignored.
 
 ## Security
 

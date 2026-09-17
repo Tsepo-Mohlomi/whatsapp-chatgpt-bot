@@ -4,8 +4,11 @@ const http = require("node:http");
 const {
   createReplyQueue,
   createHealthServer,
+  formatMenu,
+  getQuotedMessageKey,
   getMessageText,
   normalizeJid,
+  parseCommand,
   validateConfig,
 } = require("./bot");
 
@@ -49,4 +52,26 @@ test("serves a JSON health endpoint", async () => {
   server.close();
   assert.equal(response.statusCode, 200);
   assert.deepEqual(JSON.parse(response.body), { status: "ok", whatsapp: "starting" });
+});
+
+test("parses colon commands and preserves arguments", () => {
+  assert.deepEqual(parseCommand(":react ❤️"), { name: "react", args: ["❤️"], rawArgs: "❤️" });
+  assert.deepEqual(parseCommand(":ai explain this clearly"), { name: "ai", args: ["explain", "this", "clearly"], rawArgs: "explain this clearly" });
+  assert.equal(parseCommand("hello"), null);
+});
+
+test("formats the command menu", () => {
+  const menu = formatMenu(":");
+  assert.match(menu, /:menu/);
+  assert.match(menu, /:status/);
+  assert.match(menu, /:react/);
+  assert.match(menu, /:autoread/);
+});
+
+test("extracts the quoted message key for reactions", () => {
+  const key = getQuotedMessageKey({
+    key: { remoteJid: "1@s.whatsapp.net" },
+    message: { extendedTextMessage: { contextInfo: { stanzaId: "ABC", participant: "2@s.whatsapp.net" } } },
+  });
+  assert.deepEqual(key, { remoteJid: "1@s.whatsapp.net", fromMe: false, id: "ABC", participant: "2@s.whatsapp.net" });
 });
