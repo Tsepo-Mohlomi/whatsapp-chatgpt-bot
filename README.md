@@ -102,7 +102,17 @@ Commands use `:` by default. Send `:menu` for the in-chat menu.
 | `:id` | `:id` | Show the current chat ID. |
 | `:about` | `:about` | Show bot information. |
 
-Automatic status viewing is enabled by default and can be disabled permanently with `AUTO_VIEW_STATUS=false` in `.env`. The bot only processes commands from `OWNER_NUMBER`; group messages remain ignored.
+Automatic status viewing and the default green-heart status reaction are enabled by default. Configure them in `.env`:
+
+```env
+AUTO_VIEW_STATUS=true
+AUTO_STATUS_REACT=true
+STATUS_REACTION=💚
+```
+
+The status reaction uses Baileys' status-specific `statusJidList` option and sends to `status@broadcast`, targeting both the status author's participant JID and the bot's own JID. This is different from a normal chat reaction, which is why sending a regular reaction to `msg.key.remoteJid` can appear successful in logs without displaying on the status.
+
+The bot only processes commands from `OWNER_NUMBER`; group messages remain ignored.
 
 ## Security
 

@@ -15,6 +15,8 @@ const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT ||
   "You are a helpful WhatsApp assistant. Keep replies clear, friendly, and reasonably concise.";
 const COMMAND_PREFIX = process.env.COMMAND_PREFIX || ":";
 const DEFAULT_AUTO_VIEW_STATUS = process.env.AUTO_VIEW_STATUS !== "false";
+const DEFAULT_AUTO_STATUS_REACT = process.env.AUTO_STATUS_REACT !== "false";
+const STATUS_REACTION = process.env.STATUS_REACTION || "💚";
 let healthServer;
 let whatsappConnected = false;
 const startedAt = Date.now();
@@ -63,6 +65,15 @@ function getQuotedMessageKey(msg) {
     fromMe: false,
     id: context.stanzaId,
     participant: context.participant,
+  };
+}
+
+function getStatusReactionOptions(statusKey, ownJid) {
+  const statusJidList = [...new Set([statusKey?.participant, ownJid].filter(Boolean))];
+  return {
+    jid: "status@broadcast",
+    message: { react: { text: STATUS_REACTION, key: statusKey } },
+    options: { statusJidList },
   };
 }
 
@@ -132,12 +143,14 @@ async function startBot() {
   const ownerJid = normalizeJid(process.env.OWNER_NUMBER);
   const enqueueReply = createReplyQueue();
   let autoViewStatus = DEFAULT_AUTO_VIEW_STATUS;
+  const autoStatusReact = DEFAULT_AUTO_STATUS_REACT;
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
   if (!healthServer) healthServer = createHealthServer(() => ({
     status: "ok",
     whatsapp: whatsappConnected ? "connected" : "starting",
     autoViewStatus,
+    autoStatusReact,
   }));
   if (!healthServer.listening) healthServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Health server listening on 0.0.0.0:${PORT}`);
@@ -176,6 +189,12 @@ async function startBot() {
     if (msg.key.remoteJid === "status@broadcast") {
       if (autoViewStatus && msg.message && !msg.key.fromMe) {
         await sock.readMessages([msg.key]).catch((error) => console.error("Could not view status:", error.message));
+        if (autoStatusReact && msg.key.participant && sock.user?.id) {
+          const reaction = getStatusReactionOptions(msg.key, sock.user.id);
+          await sock.sendMessage(reaction.jid, reaction.message, reaction.options)
+            .then(() => console.log(`Status reaction ${STATUS_REACTION} sent to ${msg.key.participant}`))
+            .catch((error) => console.error("Could not react to status:", error.message));
+        }
       }
       return;
     }
@@ -261,6 +280,7 @@ module.exports = {
   formatRuntimeStatus,
   getMessageText,
   getQuotedMessageKey,
+  getStatusReactionOptions,
   normalizeJid,
   parseCommand,
   validateConfig,

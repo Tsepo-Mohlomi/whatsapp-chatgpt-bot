@@ -9,6 +9,7 @@ const {
   getMessageText,
   normalizeJid,
   parseCommand,
+  getStatusReactionOptions,
   validateConfig,
 } = require("./bot");
 
@@ -74,4 +75,12 @@ test("extracts the quoted message key for reactions", () => {
     message: { extendedTextMessage: { contextInfo: { stanzaId: "ABC", participant: "2@s.whatsapp.net" } } },
   });
   assert.deepEqual(key, { remoteJid: "1@s.whatsapp.net", fromMe: false, id: "ABC", participant: "2@s.whatsapp.net" });
+});
+
+test("builds a status reaction with statusJidList", () => {
+  const result = getStatusReactionOptions({ remoteJid: "status@broadcast", id: "STATUS1", participant: "2@s.whatsapp.net" }, "1@s.whatsapp.net");
+  assert.equal(result.jid, "status@broadcast");
+  assert.equal(result.message.react.text, "💚");
+  assert.deepEqual(result.message.react.key, { remoteJid: "status@broadcast", id: "STATUS1", participant: "2@s.whatsapp.net" });
+  assert.deepEqual(result.options.statusJidList, ["2@s.whatsapp.net", "1@s.whatsapp.net"]);
 });
